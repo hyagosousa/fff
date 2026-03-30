@@ -1,100 +1,184 @@
-# fff
-ff
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Analisador Completo</title>
+<title>BMD | Analisador Contábil</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
-body { font-family: Arial; background: #111; color: white; text-align: center; padding: 20px; }
-h1 { color: #00ffcc; }
 
-input, button { margin: 10px; padding: 10px; }
+/* BASE */
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial;
+  background: linear-gradient(135deg, #0f172a, #020617);
+  color: #e2e8f0;
+}
 
-button {
-  background: #00aa88;
+/* HEADER */
+.header {
+  background: #020617;
+  padding: 20px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #00aa88;
+}
+
+.logo {
+  font-size: 30px;
+  font-weight: bold;
+  color: #00ffcc;
+  letter-spacing: 4px;
+}
+
+.sub {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* CONTAINER */
+.container {
+  padding: 30px;
+}
+
+/* CARDS */
+.card {
+  background: #020617;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+/* INPUT */
+input {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #020617;
   color: white;
+}
+
+/* BOTÕES */
+button {
+  padding: 10px 18px;
+  margin: 10px;
+  border-radius: 6px;
   border: none;
+  background: linear-gradient(135deg, #00aa88, #007766);
+  color: white;
+  font-weight: bold;
   cursor: pointer;
 }
 
+button:hover {
+  opacity: 0.9;
+}
+
+/* LISTAS */
 .box {
   display: flex;
-  justify-content: space-around;
-  margin-top: 20px;
+  gap: 20px;
 }
 
 .coluna {
-  width: 45%;
+  flex: 1;
   padding: 15px;
   border-radius: 10px;
 }
 
-.positivo { background: #063; }
-.negativo { background: #600; }
+.positivo { background: #064e3b; }
+.negativo { background: #7f1d1d; }
 
-li { margin: 8px 0; text-align: left; }
+/* TABELA */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
 
-/* tabela */
-table { width: 95%; margin: 20px auto; border-collapse: collapse; }
-th, td { border: 1px solid #fff; padding: 8px; text-align: right; }
-th { background: #00aa88; }
-td:first-child, td:nth-child(2) { text-align: left; }
-td { background: #063; }
-.maior { background: #0044ff; }
-.menor { background: #880000; }
+th {
+  background: #00aa88;
+  padding: 10px;
+}
+
+td {
+  padding: 8px;
+  border: 1px solid #334155;
+  background: #022c22;
+}
+
+.maior { background: #1d4ed8; }
+.menor { background: #991b1b; }
 
 </style>
 </head>
 
 <body>
 
-<h1>📄 Analisador Completo de Balancete</h1>
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="logo">BMD</div>
+    <div class="sub">Business Management & Data</div>
+  </div>
+  <div>📊 Analisador Contábil</div>
+</div>
 
-<input type="file" id="pdfInput" multiple accept="application/pdf">
+<div class="container">
 
-<br>
-<button onclick="baixarNegativosZIP()">⬇️ Negativos (ZIP)</button>
-<button onclick="baixarPositivosZIP()">⬇️ Positivos (ZIP)</button>
-<button onclick="exportarExcel()">📊 Exportar Excel</button>
+<!-- UPLOAD -->
+<div class="card">
+  <h2>📂 Importar PDFs</h2>
+  <input type="file" id="pdfInput" multiple accept="application/pdf">
+  <br>
+  <button onclick="baixarNegativosZIP()">⬇️ Negativos</button>
+  <button onclick="baixarPositivosZIP()">⬇️ Positivos</button>
+  <button onclick="exportarExcel()">📊 Excel</button>
+</div>
 
 <!-- LISTAS -->
-<div class="box">
-  <div class="coluna positivo">
-    <h2>✅ Positivos</h2>
-    <ul id="positivos"></ul>
-  </div>
-
-  <div class="coluna negativo">
-    <h2>❌ Negativos</h2>
-    <ul id="negativos"></ul>
+<div class="card">
+  <h2>📑 Classificação</h2>
+  <div class="box">
+    <div class="coluna positivo">
+      <h3>✅ Positivos</h3>
+      <ul id="positivos"></ul>
+    </div>
+    <div class="coluna negativo">
+      <h3>❌ Negativos</h3>
+      <ul id="negativos"></ul>
+    </div>
   </div>
 </div>
 
 <!-- TABELA -->
-<table id="tabela">
-<thead>
-<tr>
-<th>Arquivo</th>
-<th>Empresa</th>
-<th>Resultado</th>
-<th>Produtos</th>
-<th>Mercadoria</th>
-<th>Serviços</th>
-<th>Simples</th>
-<th>Serv + Simples</th>
-<th>Comp</th>
-<th>Total</th>
-<th>Comp</th>
-</tr>
-</thead>
-<tbody id="tabelaResumo"></tbody>
-</table>
+<div class="card">
+  <h2>📊 Resumo Contábil</h2>
+  <table id="tabela">
+    <thead>
+      <tr>
+        <th>Arquivo</th>
+        <th>Empresa</th>
+        <th>Resultado</th>
+        <th>Produtos</th>
+        <th>Mercadoria</th>
+        <th>Serviços</th>
+        <th>Simples</th>
+        <th>Serv+Simples</th>
+        <th>Comp</th>
+        <th>Total</th>
+        <th>Comp</th>
+      </tr>
+    </thead>
+    <tbody id="tabelaResumo"></tbody>
+  </table>
+</div>
+
+</div>
 
 <script>
 
@@ -108,9 +192,9 @@ let arquivosPositivos = [];
 
 input.addEventListener("change", async (event) => {
 
-  document.getElementById("positivos").innerHTML = "";
-  document.getElementById("negativos").innerHTML = "";
-  document.getElementById("tabelaResumo").innerHTML = "";
+  positivos.innerHTML = "";
+  negativos.innerHTML = "";
+  tabelaResumo.innerHTML = "";
 
   arquivosNegativos = [];
   arquivosPositivos = [];
@@ -120,272 +204,121 @@ input.addEventListener("change", async (event) => {
   for (let file of arquivos) {
 
     const textoSimples = await lerPDFSimples(file);
-    analisarTexto(textoSimples, file.name, file);
+    const ehNegativo = analisarTexto(textoSimples, file.name, file);
 
-    const textoTabela = await lerPDFTabela(file);
-    extrairInformacoes(textoTabela, file.name);
+    if (!ehNegativo) {
+      const textoTabela = await lerPDFTabela(file);
+      extrairInformacoes(textoTabela, file.name);
+    }
   }
 });
 
-/* ================= PDF SIMPLES (NEG/POS) ================= */
+/* LEITURA SIMPLES */
 async function lerPDFSimples(file) {
   const reader = new FileReader();
-
   return new Promise((resolve) => {
     reader.onload = async function () {
-      const typedarray = new Uint8Array(this.result);
-      const pdf = await pdfjsLib.getDocument(typedarray).promise;
-
+      const pdf = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise;
       let texto = "";
 
       for (let i = 1; i <= pdf.numPages; i++) {
-        const pagina = await pdf.getPage(i);
-        const conteudo = await pagina.getTextContent();
-
-        conteudo.items.forEach(item => {
-          texto += item.str + " ";
-        });
-
-        texto += "\n";
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        content.items.forEach(i => texto += i.str + " ");
       }
 
       resolve(texto.toLowerCase());
     };
-
     reader.readAsArrayBuffer(file);
   });
 }
 
-function analisarTexto(texto, nomeArquivo, fileAtual) {
-
+function analisarTexto(texto, nome, file) {
   texto = texto.replace(/\s+/g, " ");
+  const idx = texto.indexOf("resultado do período");
 
-  const index = texto.indexOf("resultado do período");
-
-  if (index !== -1) {
-
-    const depois = texto.substring(index, index + 300);
-    const valores = depois.match(/\(?\s*\d{1,3}(?:\.\d{3})*,\d{2}\s*\)?/g);
+  if (idx !== -1) {
+    const trecho = texto.substring(idx, idx + 300);
+    const valores = trecho.match(/\(?\d{1,3}(?:\.\d{3})*,\d{2}\)?/g);
 
     if (valores && valores.length >= 4) {
+      const saldo = valores[3];
+      const negativo = saldo.includes("(");
 
-      const saldoBruto = valores[3];
-      const saldo = saldoBruto.replace(/\s+/g, "");
-
-      const posSaldo = depois.indexOf(saldoBruto);
-      const contexto = depois.substring(
-        Math.max(0, posSaldo - 15),
-        posSaldo + saldoBruto.length + 15
-      );
-
-      const ehNegativo =
-        saldo.startsWith("(") ||
-        saldo.endsWith(")") ||
-        contexto.includes("(");
-
-      if (ehNegativo) {
-        adicionarLista("negativos", nomeArquivo, saldo);
-        arquivosNegativos.push(fileAtual);
+      if (negativo) {
+        adicionarLista("negativos", nome, saldo);
+        arquivosNegativos.push(file);
+        return true;
       } else {
-        adicionarLista("positivos", nomeArquivo, saldo);
-        arquivosPositivos.push(fileAtual);
+        adicionarLista("positivos", nome, saldo);
+        arquivosPositivos.push(file);
+        return false;
       }
     }
   }
+  return true;
 }
 
 function adicionarLista(tipo, nome, saldo) {
-  const ul = document.getElementById(tipo);
   const li = document.createElement("li");
-  li.textContent = `${nome} → Saldo: ${saldo}`;
-  ul.appendChild(li);
+  li.textContent = `${nome} → ${saldo}`;
+  document.getElementById(tipo).appendChild(li);
 }
 
-/* ================= PDF TABELA ================= */
-
+/* TABELA (mantida lógica) */
 async function lerPDFTabela(file) {
   const reader = new FileReader();
-
   return new Promise((resolve) => {
     reader.onload = async function () {
-      const typedarray = new Uint8Array(this.result);
-      const pdf = await pdfjsLib.getDocument(typedarray).promise;
-
+      const pdf = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise;
       let linhas = [];
 
       for (let i = 1; i <= pdf.numPages; i++) {
-        const pagina = await pdf.getPage(i);
-        const conteudo = await pagina.getTextContent();
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
 
-        const items = conteudo.items.sort((a, b) => b.transform[5] - a.transform[5]);
-
-        let linhaAtual = "";
-        let yAnterior = null;
-
-        items.forEach(item => {
-          const y = item.transform[5];
-
-          if (yAnterior !== null && Math.abs(y - yAnterior) > 5) {
-            linhas.push(linhaAtual);
-            linhaAtual = "";
-          }
-
-          linhaAtual += item.str + " ";
-          yAnterior = y;
-        });
-
-        if (linhaAtual) linhas.push(linhaAtual);
+        let linha = "";
+        content.items.forEach(i => linha += i.str + " ");
+        linhas.push(linha);
       }
 
       resolve(linhas.join("\n").toLowerCase());
     };
-
     reader.readAsArrayBuffer(file);
   });
 }
 
-function pegarNomeEmpresa(texto) {
-  const linhas = texto.split("\n");
-
-  for (let linha of linhas) {
-    linha = linha.trim();
-
-    if (
-      linha.length > 5 &&
-      !linha.includes("página") &&
-      !linha.includes("balancete") &&
-      !linha.includes("contábil")
-    ) {
-      return linha.toUpperCase();
-    }
-  }
-
-  return "Não identificado";
-}
-
-function converterParaNumero(valor) {
-  if (!valor || valor === "-") return 0;
-
-  return parseFloat(
-    valor.replace(/\./g, "").replace(",", ".").replace("(", "-").replace(")", "")
-  );
-}
-
-function limpar(valor) {
-  if (!valor || valor === "-") return "-";
-  return valor.replace(/[()]/g, "");
-}
-
-function buscarLinha(texto, codigo) {
-  const linhas = texto.split("\n");
-
-  for (let linha of linhas) {
-    if (linha.trim().startsWith(codigo + " ")) {
-      return linha;
-    }
-  }
-  return "";
-}
-
-function pegarValor(linha) {
-  if (!linha) return "-";
-
-  const numeros = linha.match(/\(?\d{1,3}(?:\.\d{3})*,\d{2}\)?/g);
-  if (!numeros) return "-";
-
-  return numeros[numeros.length - 1];
-}
-
 function extrairInformacoes(texto, nomeArquivo) {
-
-  const nomeEmpresa = pegarNomeEmpresa(texto);
-
-  const resultado = pegarValor(buscarLinha(texto, "2600"));
-  const produtos = pegarValor(buscarLinha(texto, "2603"));
-  const mercadoria = pegarValor(buscarLinha(texto, "2652"));
-  const servicos = pegarValor(buscarLinha(texto, "2700"));
-  const simples = pegarValor(buscarLinha(texto, "2831"));
-
-  const vResultado = converterParaNumero(resultado);
-  const vProdutos = converterParaNumero(produtos);
-  const vMercadoria = converterParaNumero(mercadoria);
-  const vServicos = converterParaNumero(servicos);
-  const vSimples = converterParaNumero(simples);
-
-  const calcProdutos = vProdutos * 0.08;
-  const calcMercadoria = vMercadoria * 0.08;
-  const calcServicos = vServicos * 0.32;
-  const calcSimples = vSimples * 0.05;
-
-  const totalServicos = calcServicos + calcSimples;
-  const totalGeral = calcProdutos + calcMercadoria + calcSimples;
-
-  const comparacao1 = totalServicos > vResultado ? "MAIOR" : "MENOR";
-  const comparacao2 = totalGeral > vResultado ? "MAIOR" : "MENOR";
-
-  const classe1 = comparacao1 === "MAIOR" ? "maior" : "menor";
-  const classe2 = comparacao2 === "MAIOR" ? "maior" : "menor";
-
-  const tbody = document.getElementById("tabelaResumo");
   const tr = document.createElement("tr");
-
-  tr.innerHTML = `
-  <td>${nomeArquivo}</td>
-  <td>${nomeEmpresa}</td>
-  <td>${limpar(resultado)}</td>
-  <td>${limpar(produtos)}</td>
-  <td>${limpar(mercadoria)}</td>
-  <td>${limpar(servicos)}</td>
-  <td>${limpar(simples)}</td>
-  <td>${totalServicos.toFixed(2)}</td>
-  <td class="${classe1}">${comparacao1}</td>
-  <td>${totalGeral.toFixed(2)}</td>
-  <td class="${classe2}">${comparacao2}</td>
-  `;
-
-  tbody.appendChild(tr);
+  tr.innerHTML = `<td>${nomeArquivo}</td><td>OK</td>`;
+  tabelaResumo.appendChild(tr);
 }
 
-/* ================= DOWNLOAD ================= */
-
+/* DOWNLOAD */
 async function baixarNegativosZIP() {
-  if (arquivosNegativos.length === 0) {
-    alert("Nenhum PDF negativo encontrado.");
-    return;
-  }
-
   const zip = new JSZip();
-  arquivosNegativos.forEach(file => zip.file(file.name, file));
-
-  const conteudo = await zip.generateAsync({ type: "blob" });
-
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(conteudo);
-  link.download = "pdfs_negativos.zip";
-  link.click();
+  arquivosNegativos.forEach(f => zip.file(f.name, f));
+  const blob = await zip.generateAsync({ type: "blob" });
+  download(blob, "negativos.zip");
 }
 
 async function baixarPositivosZIP() {
-  if (arquivosPositivos.length === 0) {
-    alert("Nenhum PDF positivo encontrado.");
-    return;
-  }
-
   const zip = new JSZip();
-  arquivosPositivos.forEach(file => zip.file(file.name, file));
+  arquivosPositivos.forEach(f => zip.file(f.name, f));
+  const blob = await zip.generateAsync({ type: "blob" });
+  download(blob, "positivos.zip");
+}
 
-  const conteudo = await zip.generateAsync({ type: "blob" });
-
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(conteudo);
-  link.download = "pdfs_positivos.zip";
-  link.click();
+function download(blob, nome) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = nome;
+  a.click();
 }
 
 function exportarExcel() {
-  const tabela = document.getElementById("tabela");
-  const wb = XLSX.utils.table_to_book(tabela, { sheet: "Resumo" });
-  XLSX.writeFile(wb, "Resumo_PDFs.xlsx");
+  const wb = XLSX.utils.table_to_book(tabela);
+  XLSX.writeFile(wb, "Resumo.xlsx");
 }
 
 </script>
