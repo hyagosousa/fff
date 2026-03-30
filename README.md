@@ -9,8 +9,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
-
-/* BASE */
 body {
   margin: 0;
   font-family: "Segoe UI", Arial;
@@ -29,10 +27,10 @@ body {
 }
 
 .logo {
-  font-size: 30px;
+  font-size: 32px;
   font-weight: bold;
   color: #00ffcc;
-  letter-spacing: 4px;
+  letter-spacing: 5px;
 }
 
 .sub {
@@ -41,9 +39,7 @@ body {
 }
 
 /* CONTAINER */
-.container {
-  padding: 30px;
-}
+.container { padding: 30px; }
 
 /* CARDS */
 .card {
@@ -75,15 +71,10 @@ button {
   cursor: pointer;
 }
 
-button:hover {
-  opacity: 0.9;
-}
+button:hover { opacity: 0.9; }
 
 /* LISTAS */
-.box {
-  display: flex;
-  gap: 20px;
-}
+.box { display: flex; gap: 20px; }
 
 .coluna {
   flex: 1;
@@ -93,6 +84,8 @@ button:hover {
 
 .positivo { background: #064e3b; }
 .negativo { background: #7f1d1d; }
+
+li { margin: 8px 0; }
 
 /* TABELA */
 table {
@@ -119,7 +112,6 @@ td {
 
 <body>
 
-<!-- HEADER -->
 <div class="header">
   <div>
     <div class="logo">BMD</div>
@@ -130,7 +122,6 @@ td {
 
 <div class="container">
 
-<!-- UPLOAD -->
 <div class="card">
   <h2>📂 Importar PDFs</h2>
   <input type="file" id="pdfInput" multiple accept="application/pdf">
@@ -140,7 +131,6 @@ td {
   <button onclick="exportarExcel()">📊 Excel</button>
 </div>
 
-<!-- LISTAS -->
 <div class="card">
   <h2>📑 Classificação</h2>
   <div class="box">
@@ -155,7 +145,6 @@ td {
   </div>
 </div>
 
-<!-- TABELA -->
 <div class="card">
   <h2>📊 Resumo Contábil</h2>
   <table id="tabela">
@@ -213,20 +202,18 @@ input.addEventListener("change", async (event) => {
   }
 });
 
-/* LEITURA SIMPLES */
+/* PDF SIMPLES */
 async function lerPDFSimples(file) {
   const reader = new FileReader();
   return new Promise((resolve) => {
     reader.onload = async function () {
       const pdf = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise;
       let texto = "";
-
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
         content.items.forEach(i => texto += i.str + " ");
       }
-
       resolve(texto.toLowerCase());
     };
     reader.readAsArrayBuffer(file);
@@ -234,11 +221,12 @@ async function lerPDFSimples(file) {
 }
 
 function analisarTexto(texto, nome, file) {
+
   texto = texto.replace(/\s+/g, " ");
   const idx = texto.indexOf("resultado do período");
 
   if (idx !== -1) {
-    const trecho = texto.substring(idx, idx + 300);
+    const trecho = texto.substring(idx, 300);
     const valores = trecho.match(/\(?\d{1,3}(?:\.\d{3})*,\d{2}\)?/g);
 
     if (valores && valores.length >= 4) {
@@ -265,61 +253,128 @@ function adicionarLista(tipo, nome, saldo) {
   document.getElementById(tipo).appendChild(li);
 }
 
-/* TABELA (mantida lógica) */
+/* PDF TABELA */
 async function lerPDFTabela(file) {
   const reader = new FileReader();
   return new Promise((resolve) => {
     reader.onload = async function () {
       const pdf = await pdfjsLib.getDocument(new Uint8Array(this.result)).promise;
       let linhas = [];
-
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
-
         let linha = "";
         content.items.forEach(i => linha += i.str + " ");
         linhas.push(linha);
       }
-
       resolve(linhas.join("\n").toLowerCase());
     };
     reader.readAsArrayBuffer(file);
   });
 }
 
+/* CÁLCULOS */
+function pegarNomeEmpresa(texto) {
+  const linhas = texto.split("\n");
+  for (let linha of linhas) {
+    linha = linha.trim();
+    if (linha.length > 5 && !linha.includes("balancete")) {
+      return linha.toUpperCase();
+    }
+  }
+  return "Não identificado";
+}
+
+function converterParaNumero(valor) {
+  if (!valor || valor === "-") return 0;
+  return parseFloat(valor.replace(/\./g,"").replace(",",".").replace("(","-").replace(")",""));
+}
+
+function limpar(valor) {
+  if (!valor) return "-";
+  return valor.replace(/[()]/g,"");
+}
+
+function buscarLinha(texto, codigo) {
+  return texto.split("\n").find(l => l.trim().startsWith(codigo+" ")) || "";
+}
+
+function pegarValor(linha) {
+  const numeros = linha.match(/\(?\d{1,3}(?:\.\d{3})*,\d{2}\)?/g);
+  return numeros ? numeros[numeros.length-1] : "-";
+}
+
 function extrairInformacoes(texto, nomeArquivo) {
+
+  const nomeEmpresa = pegarNomeEmpresa(texto);
+
+  const resultado = pegarValor(buscarLinha(texto,"2600"));
+  const produtos = pegarValor(buscarLinha(texto,"2603"));
+  const mercadoria = pegarValor(buscarLinha(texto,"2652"));
+  const servicos = pegarValor(buscarLinha(texto,"2700"));
+  const simples = pegarValor(buscarLinha(texto,"2831"));
+
+  const vResultado = converterParaNumero(resultado);
+  const vProdutos = converterParaNumero(produtos);
+  const vMercadoria = converterParaNumero(mercadoria);
+  const vServicos = converterParaNumero(servicos);
+  const vSimples = converterParaNumero(simples);
+
+  const totalServicos = (vServicos*0.32) + (vSimples*0.05);
+  const totalGeral = (vProdutos*0.08) + (vMercadoria*0.08) + (vSimples*0.05);
+
+  const comp1 = totalServicos > vResultado ? "MAIOR" : "MENOR";
+  const comp2 = totalGeral > vResultado ? "MAIOR" : "MENOR";
+
   const tr = document.createElement("tr");
-  tr.innerHTML = `<td>${nomeArquivo}</td><td>OK</td>`;
+  tr.innerHTML = `
+  <td>${nomeArquivo}</td>
+  <td>${nomeEmpresa}</td>
+  <td>${limpar(resultado)}</td>
+  <td>${limpar(produtos)}</td>
+  <td>${limpar(mercadoria)}</td>
+  <td>${limpar(servicos)}</td>
+  <td>${limpar(simples)}</td>
+  <td>${totalServicos.toFixed(2)}</td>
+  <td class="${comp1==="MAIOR"?"maior":"menor"}">${comp1}</td>
+  <td>${totalGeral.toFixed(2)}</td>
+  <td class="${comp2==="MAIOR"?"maior":"menor"}">${comp2}</td>
+  `;
+
   tabelaResumo.appendChild(tr);
 }
 
 /* DOWNLOAD */
-async function baixarNegativosZIP() {
-  const zip = new JSZip();
-  arquivosNegativos.forEach(f => zip.file(f.name, f));
-  const blob = await zip.generateAsync({ type: "blob" });
-  download(blob, "negativos.zip");
+async function baixarNegativosZIP(){
+  const zip=new JSZip();
+  arquivosNegativos.forEach(f=>zip.file(f.name,f));
+  const blob=await zip.generateAsync({type:"blob"});
+  download(blob,"negativos.zip");
 }
 
-async function baixarPositivosZIP() {
-  const zip = new JSZip();
-  arquivosPositivos.forEach(f => zip.file(f.name, f));
-  const blob = await zip.generateAsync({ type: "blob" });
-  download(blob, "positivos.zip");
+async function baixarPositivosZIP(){
+  const zip=new JSZip();
+  arquivosPositivos.forEach(f=>zip.file(f.name,f));
+  const blob=await zip.generateAsync({type:"blob"});
+  download(blob,"positivos.zip");
 }
 
-function download(blob, nome) {
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = nome;
+function download(blob,nome){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=nome;
   a.click();
 }
 
-function exportarExcel() {
-  const wb = XLSX.utils.table_to_book(tabela);
-  XLSX.writeFile(wb, "Resumo.xlsx");
+function exportarExcel(){
+  const wb=XLSX.utils.table_to_book(tabela);
+  XLSX.writeFile(wb,"Resumo.xlsx");
 }
+
+</script>
+
+</body>
+</html>
 
 </script>
 
